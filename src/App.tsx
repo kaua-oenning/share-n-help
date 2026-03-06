@@ -28,16 +28,12 @@ const queryClient = new QueryClient();
 
 const RegistersPage = () => {
   const [activeItems, setActiveItems] = useState<DonationItemType[]>([]);
-  // const [isLoading, setIsLoading] = useState(true);
-  // const [error, setError] = useState<string | null>(null);
 
   const { user } = useAuth();
 
   useEffect(() => {
     const fetchDonationItems = async () => {
       try {
-        // setIsLoading(true);
-
         const itemsRef = collection(db, "bens");
         const q = query(itemsRef, where("userId", "==", user.uid));
         const snapshot = await getDocs(q);
@@ -66,10 +62,8 @@ const RegistersPage = () => {
         });
         setActiveItems(items);
       } catch (err) {
-        // setError("Erro ao carregar os itens.");
         console.error(err);
       } finally {
-        // setIsLoading(false);
       }
     };
 
@@ -108,8 +102,6 @@ const RegistersPage = () => {
 const BrowsePage = () => {
   const [activeItems, setActiveItems] = useState<DonationItemType[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  // const [isLoading, setIsLoading] = useState(true);
-  // const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -120,8 +112,6 @@ const BrowsePage = () => {
 
     const fetchDonationItems = async () => {
       try {
-        // setIsLoading(true);
-
         const itemsRef = collection(db, "bens");
         const q = query(itemsRef, where("status", "==", "available"));
         const snapshot = await getDocs(q);
@@ -150,10 +140,8 @@ const BrowsePage = () => {
         });
         setActiveItems(items);
       } catch (err) {
-        // setError("Erro ao carregar os itens.");
         console.error(err);
       } finally {
-        // setIsLoading(false);
       }
     };
 
