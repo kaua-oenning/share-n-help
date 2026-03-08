@@ -23,6 +23,7 @@ import {
 } from "firebase/firestore";
 import { DonationItem } from "./components/DonationItem";
 import { X } from "lucide-react";
+import { getAllBens } from "./service/BemService";
 
 const queryClient = new QueryClient();
 
@@ -115,6 +116,10 @@ const BrowsePage = () => {
         const itemsRef = collection(db, "bens");
         const q = query(itemsRef, where("status", "==", "available"));
         const snapshot = await getDocs(q);
+
+        const dataa = await getAllBens();
+
+        console.log("Fetched items:", dataa);
 
         const items: DonationItemType[] = [];
         snapshot.forEach((doc) => {
