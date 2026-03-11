@@ -18,6 +18,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { addDoc, collection } from "firebase/firestore";
 import { db } from "@/firebase";
 import { useAuth } from "./AuthContext";
+import { salvarBem } from "@/service/BemService";
 
 export const DonationForm = () => {
   const navigate = useNavigate();
@@ -25,9 +26,10 @@ export const DonationForm = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const { user } = useAuth();
 
-  async function salvarBem(bem: any) {
+  async function saveBem(bem: any) {
     try {
       const docRef = await addDoc(collection(db, "bens"), bem);
+      const response = await salvarBem(bem);
 
       if (docRef) {
         toast.success("Bem Cadastrado com sucesso!");
@@ -57,7 +59,7 @@ export const DonationForm = () => {
   });
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -105,7 +107,7 @@ export const DonationForm = () => {
 
     setIsSubmitting(true);
 
-    salvarBem(formData);
+    saveBem(formData);
 
     setTimeout(() => {
       setIsSubmitting(false);
