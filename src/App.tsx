@@ -11,18 +11,10 @@ import { DonationForm } from "./components/DonationForm";
 import { RequestForm } from "./components/RequestForm";
 import { ItemDetail } from "./components/ItemDetail";
 import { AuthProvider, useAuth } from "./components/AuthContext";
-import { db } from "./firebase";
-import { categories, DonationItem as DonationItemType } from "@/lib/data";
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
 import { DonationItem } from "./components/DonationItem";
 import { X } from "lucide-react";
+import { LoginModal } from "./components/LoginModal";
+import { categories, DonationItem as DonationItemType } from "@/lib/data";
 
 const queryClient = new QueryClient();
 
@@ -33,34 +25,12 @@ const RegistersPage = () => {
 
   useEffect(() => {
     const fetchDonationItems = async () => {
+      if (!user) return;
       try {
-        const itemsRef = collection(db, "bens");
-        const q = query(itemsRef, where("userId", "==", user.uid));
-        const snapshot = await getDocs(q);
-
-        const items: DonationItemType[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          items.push({
-            id: doc.id,
-            title: data.title,
-            description: data.description,
-            categoryId: data.categoryId,
-            condition: data.condition,
-            imageUrl: data.imageUrl,
-            location: data.location,
-            pickupDates: data.pickupDates,
-            pickupTimes: data.pickupTimes,
-            contactName: data.contactName,
-            contactPhone: data.contactPhone,
-            status: data.status,
-            createdAt: data.createdAt,
-            updatedAt: data.updatedAt,
-            interests: data.interests || undefined,
-            userId: data.userId,
-          });
-        });
-        setActiveItems(items);
+        const res = await fetch(`http://localhost:3000/api/bens?userId=${user.id}`);
+        if (!res.ok) throw new Error("Ops");
+        const data = await res.json();
+        setActiveItems(data);
       } catch (err) {
         console.error(err);
       } finally {
@@ -112,33 +82,10 @@ const BrowsePage = () => {
 
     const fetchDonationItems = async () => {
       try {
-        const itemsRef = collection(db, "bens");
-        const q = query(itemsRef, where("status", "==", "available"));
-        const snapshot = await getDocs(q);
-
-        const items: DonationItemType[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          items.push({
-            id: doc.id,
-            title: data.title,
-            description: data.description,
-            categoryId: data.categoryId,
-            condition: data.condition,
-            imageUrl: data.imageUrl,
-            location: data.location,
-            pickupDates: data.pickupDates,
-            pickupTimes: data.pickupTimes,
-            contactName: data.contactName,
-            contactPhone: data.contactPhone,
-            status: data.status,
-            createdAt: data.createdAt,
-            updatedAt: data.updatedAt,
-            interests: data.interests,
-            userId: data.userId,
-          });
-        });
-        setActiveItems(items);
+        const res = await fetch("http://localhost:3000/api/bens?status=available");
+        if (!res.ok) throw new Error("Ops");
+        const data = await res.json();
+        setActiveItems(data);
       } catch (err) {
         console.error(err);
       } finally {
@@ -161,11 +108,10 @@ const BrowsePage = () => {
               <h3 className="text-lg font-medium mb-3">Categorias</h3>
               <div className="space-y-1">
                 <button
-                  className={`w-full text-left px-3 py-2 rounded-md text-sm ${
-                    !selectedCategory
-                      ? "bg-accent text-foreground font-medium"
-                      : "hover:bg-accent/50 text-muted-foreground"
-                  }`}
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm ${!selectedCategory
+                    ? "bg-accent text-foreground font-medium"
+                    : "hover:bg-accent/50 text-muted-foreground"
+                    }`}
                   onClick={() => setSelectedCategory(null)}
                 >
                   Todas as categorias
@@ -174,11 +120,10 @@ const BrowsePage = () => {
                 {categories.map((category) => (
                   <button
                     key={category.id}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm ${
-                      selectedCategory === category.id
-                        ? "bg-accent text-foreground font-medium"
-                        : "hover:bg-accent/50 text-muted-foreground"
-                    }`}
+                    className={`w-full text-left px-3 py-2 rounded-md text-sm ${selectedCategory === category.id
+                      ? "bg-accent text-foreground font-medium"
+                      : "hover:bg-accent/50 text-muted-foreground"
+                      }`}
                     onClick={() => setSelectedCategory(category.id)}
                   >
                     {category.name}
@@ -191,10 +136,9 @@ const BrowsePage = () => {
           <div className="flex-1">
             <h1 className="text-3xl font-bold mb-2">
               {selectedCategory
-                ? `${
-                    categories.find((c) => c.id === selectedCategory)?.name ||
-                    "Itens"
-                  } disponíveis`
+                ? `${categories.find((c) => c.id === selectedCategory)?.name ||
+                "Itens"
+                } disponíveis`
                 : "Todos os itens disponíveis"}
             </h1>
             <p className="text-muted-foreground mb-8">
@@ -241,18 +185,13 @@ const ItemDetailPage = () => {
 
       try {
         setIsLoading(true);
-        const itemRef = doc(db, "bens", id);
-        const bem = await getDoc(itemRef);
-
-        if (bem.exists()) {
-          const data = bem.data() as DonationItemType;
-          setItem({
-            ...data,
-            id: bem.id,
-          });
-        } else {
+        const res = await fetch(`http://localhost:3000/api/bens/${id}`);
+        if (!res.ok) {
           setError("Item não encontrado.");
+          return;
         }
+        const data = await res.json();
+        setItem(data);
       } catch (err) {
         setError("Erro ao carregar os dados do item.");
         console.error(err);
@@ -344,6 +283,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <LoginModal />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/browse" element={<BrowsePage />} />

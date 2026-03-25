@@ -10,10 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { db } from "@/firebase";
 import { DonationItem, DonationItemInterest, categories } from "@/lib/data";
 import { format, isValid } from "date-fns";
-import { arrayUnion, doc, updateDoc } from "firebase/firestore";
 import {
   Calendar,
   Check,
@@ -58,12 +56,15 @@ async function addInterestToItem(
   interest: DonationItemInterest
 ) {
   try {
-    await updateDoc(doc(db, "bens", itemId), {
-      interests: arrayUnion(interest),
+    const res = await fetch(`http://localhost:3000/api/bens/${itemId}/interest`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(interest),
     });
+    if (!res.ok) throw new Error("Erro");
     toast.success("Interesse adicionado!");
   } catch (error) {
-    toast.error("Erro ao adicionar interesse:", error);
+    toast.error("Erro ao adicionar interesse:");
   }
 }
 
@@ -112,10 +113,13 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
 
   const donateItem = async () => {
     try {
-      await updateDoc(doc(db, "bens", item.id), {
-        status: "donated",
-        updatedAt: new Date().toISOString(),
+      const res = await fetch(`http://localhost:3000/api/bens/${item.id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "donated" }),
       });
+      if (!res.ok) throw new Error("Erro");
+
       toast.success("Item marcado como doado!");
       setIsDonatedDialogOpen(false);
       navigate("/browse");
@@ -127,7 +131,7 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
   const isAvailable = item.status === "available";
   const hasInterests = item.interests?.length > 0;
   const isDonated = item.status === "donated";
-  const isItemOwner = item.userId && item.userId === user?.uid;
+  const isItemOwner = item.userId && item.userId === user?.id;
 
   return (
     <div className="animate-fade-in">
@@ -281,7 +285,7 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
           )}
 
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            {isAvailable && (!item.userId || item.userId !== user?.uid) && (
+            {isAvailable && (!item.userId || item.userId !== user?.id) && (
               <Button
                 className="flex-1"
                 onClick={() => setIsReserveDialogOpen(true)}

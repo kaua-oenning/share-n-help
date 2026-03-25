@@ -34,7 +34,7 @@ export const Layout = ({ children }: LayoutProps) => {
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user, signInWithGoogle, signOut } = useAuth();
+  const { user, setLoginModalOpen, signOut } = useAuth();
 
   useEffect(() => {
     if (user) {
@@ -111,7 +111,7 @@ export const Layout = ({ children }: LayoutProps) => {
               <Popover>
                 <PopoverTrigger>
                   <img
-                    src={user.photoURL}
+                    src={user.photoURL || `https://ui-avatars.com/api/?name=${user.name}`}
                     alt="Usuário"
                     className="h-9 w-9 rounded-full cursor-pointer border border-gray-300"
                   />
@@ -137,7 +137,7 @@ export const Layout = ({ children }: LayoutProps) => {
                 variant="outline"
                 size="sm"
                 className="h-9"
-                onClick={signInWithGoogle}
+                onClick={() => setLoginModalOpen(true)}
               >
                 Entrar
               </Button>
@@ -184,7 +184,7 @@ export const Layout = ({ children }: LayoutProps) => {
                 <Popover>
                   <PopoverTrigger>
                     <img
-                      src={user.photoURL}
+                      src={user.photoURL || `https://ui-avatars.com/api/?name=${user.name}`}
                       alt="Usuário"
                       className="h-12 w-12 rounded-full cursor-pointer border border-gray-300"
                     />
@@ -211,7 +211,7 @@ export const Layout = ({ children }: LayoutProps) => {
                 variant="outline"
                 size="sm"
                 className="h-9 mt-4"
-                onClick={signInWithGoogle}
+                onClick={() => setLoginModalOpen(true)}
               >
                 Entrar
               </Button>

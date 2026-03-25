@@ -15,8 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { addDoc, collection } from "firebase/firestore";
-import { db } from "@/firebase";
 import { useAuth } from "./AuthContext";
 
 export const DonationForm = () => {
@@ -27,14 +25,18 @@ export const DonationForm = () => {
 
   async function salvarBem(bem: any) {
     try {
-      const docRef = await addDoc(collection(db, "bens"), bem);
+      const res = await fetch("http://localhost:3000/api/bens/salvar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bem),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Erro");
 
-      if (docRef) {
-        toast.success("Bem Cadastrado com sucesso!");
-      }
-      return docRef.id;
+      toast.success("Bem Cadastrado com sucesso!");
+      return data.id;
     } catch (error) {
-      toast.error("Erro ao salvar Bem:", error);
+      toast.error("Erro ao salvar Bem");
       throw error;
     }
   }
@@ -52,7 +54,7 @@ export const DonationForm = () => {
     contactEmail: "",
     status: "available",
     imageUrl: "",
-    userId: user.uid,
+    userId: user?.id,
     interestsNumber: 0,
   });
 
