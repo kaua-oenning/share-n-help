@@ -1,3 +1,4 @@
+import { apiClient } from "@/lib/apiClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,21 +52,9 @@ const formatDate = (dateString: string) => {
   return format(date, "dd/MM/yyyy");
 };
 
-async function addInterestToItem(
-  itemId: string,
-  interest: DonationItemInterest
-) {
-  try {
-    const res = await fetch(`http://localhost:3000/api/bens/${itemId}/interest`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(interest),
-    });
-    if (!res.ok) throw new Error("Erro");
-    toast.success("Interesse adicionado!");
-  } catch (error) {
-    toast.error("Erro ao adicionar interesse:");
-  }
+async function addInterestToItem(itemId: string, interest: DonationItemInterest): Promise<void> {
+  const data = await apiClient.post<{ success: boolean; message?: string }>(`/api/bens/${itemId}/interest`, interest);
+  if (!data.success) throw new Error(data.message ?? "Erro ao registrar interesse");
 }
 
 export const ItemDetail = ({ item }: ItemDetailProps) => {
@@ -82,48 +71,31 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
 
   const reserveItem = async () => {
     const alreadyExists = item.interests?.some(
-      (interest) =>
-        interest.email === user?.email ||
-        interest.phone === phone ||
-        interest.email === email
+      (interest) => interest.email === user?.email || interest.phone === phone || interest.email === email
     );
-
     if (alreadyExists) {
-      toast.error(
-        "Já foi demonstrado interesse neste item com este e-mail ou telefone."
-      );
+      toast.error("Já foi demonstrado interesse neste item com este e-mail ou telefone.");
       return;
     }
-
-    const newInterest: DonationItemInterest = {
-      name,
-      phone,
-      email,
-    };
-
+    const newInterest: DonationItemInterest = { name, phone, email };
     try {
       await addInterestToItem(item.id, newInterest);
-      toast.success("Item reservado com sucesso!");
+      toast.success("Interesse registrado com sucesso!");
       setIsReserveDialogOpen(false);
       navigate("/browse");
-    } catch (error) {
-      toast.error("Erro ao reservar item.");
+    } catch {
+      toast.error("Erro ao registrar interesse. Tente novamente.");
     }
   };
 
   const donateItem = async () => {
     try {
-      const res = await fetch(`http://localhost:3000/api/bens/${item.id}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "donated" }),
-      });
-      if (!res.ok) throw new Error("Erro");
-
+      const data = await apiClient.patch<{ success: boolean; message?: string }>(`/api/bens/${item.id}/status`, { status: "donated" });
+      if (!data.success) throw new Error(data.message);
       toast.success("Item marcado como doado!");
       setIsDonatedDialogOpen(false);
       navigate("/browse");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao marcar item como doado.");
     }
   };
