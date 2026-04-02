@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { toast } from "sonner";
+import { apiClient } from "@/lib/apiClient";
 
 interface AuthContextType {
   user: any;
@@ -28,17 +29,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<boolean> => {
     try {
-      const res = await fetch("http://localhost:3000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.message || "Erro no login");
+      const data = await apiClient.post<{
+        token?: string;
+        user?: { id: string; name: string; email: string };
+        message?: string;
+      }>("/api/auth/login", { email, password });
+
+      if (!data.token) {
+        toast.error(data.message ?? "Erro no login");
         return false;
       }
 
@@ -48,23 +48,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem("token", data.token);
       toast.success("Login efetuado com sucesso!");
       return true;
-    } catch (err) {
+    } catch {
       toast.error("Erro de conexão");
       return false;
     }
   };
 
-  const signUp = async (name: string, email: string, password: string) => {
+  const signUp = async (name: string, email: string, password: string): Promise<boolean> => {
     try {
-      const res = await fetch("http://localhost:3000/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
-      });
-      
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.message || "Erro no cadastro");
+      const data = await apiClient.post<{
+        token?: string;
+        user?: { id: string; name: string; email: string };
+        message?: string;
+      }>("/api/auth/register", { name, email, password });
+
+      if (!data.token) {
+        toast.error(data.message ?? "Erro no cadastro");
         return false;
       }
 
@@ -74,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem("token", data.token);
       toast.success("Cadastro efetuado com sucesso!");
       return true;
-    } catch (err) {
+    } catch {
       toast.error("Erro de conexão");
       return false;
     }
