@@ -15,6 +15,7 @@ import { DonationItem } from "./components/DonationItem";
 import { X } from "lucide-react";
 import { LoginModal } from "./components/LoginModal";
 import { categories, DonationItem as DonationItemType } from "@/lib/data";
+import { apiClient } from "@/lib/apiClient";
 
 const queryClient = new QueryClient();
 
@@ -24,21 +25,17 @@ const RegistersPage = () => {
   const { user } = useAuth();
 
   useEffect(() => {
+    if (!user) return;
     const fetchDonationItems = async () => {
-      if (!user) return;
       try {
-        const res = await fetch(`http://localhost:3000/api/bens?userId=${user.id}`);
-        if (!res.ok) throw new Error("Ops");
-        const data = await res.json();
+        const data = await apiClient.get<DonationItemType[]>("/api/bens/meus");
         setActiveItems(data);
       } catch (err) {
         console.error(err);
-      } finally {
       }
     };
-
     fetchDonationItems();
-  }, []);
+  }, [user]);
 
   return (
     <Layout>
@@ -76,22 +73,16 @@ const BrowsePage = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const category = params.get("category");
-    if (category) {
-      setSelectedCategory(category);
-    }
+    if (category) setSelectedCategory(category);
 
     const fetchDonationItems = async () => {
       try {
-        const res = await fetch("http://localhost:3000/api/bens?status=available");
-        if (!res.ok) throw new Error("Ops");
-        const data = await res.json();
+        const data = await apiClient.get<DonationItemType[]>("/api/bens?status=available");
         setActiveItems(data);
       } catch (err) {
         console.error(err);
-      } finally {
       }
     };
-
     fetchDonationItems();
   }, []);
 
@@ -176,30 +167,22 @@ const ItemDetailPage = () => {
   const { id } = useParams<{ id: string }>();
 
   useEffect(() => {
+    if (!id) {
+      setError("Item não encontrado.");
+      setIsLoading(false);
+      return;
+    }
     const fetchItem = async () => {
-      if (!id) {
-        setError("Item não encontrado.");
-        setIsLoading(false);
-        return;
-      }
-
       try {
         setIsLoading(true);
-        const res = await fetch(`http://localhost:3000/api/bens/${id}`);
-        if (!res.ok) {
-          setError("Item não encontrado.");
-          return;
-        }
-        const data = await res.json();
+        const data = await apiClient.get<DonationItemType>(`/api/bens/${id}`);
         setItem(data);
-      } catch (err) {
-        setError("Erro ao carregar os dados do item.");
-        console.error(err);
+      } catch {
+        setError("Item não encontrado.");
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchItem();
   }, [id]);
 
