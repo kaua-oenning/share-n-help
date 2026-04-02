@@ -48,8 +48,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem("token", data.token);
       toast.success("Login efetuado com sucesso!");
       return true;
-    } catch {
-      toast.error("Erro de conexão");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro de conexão");
       return false;
     }
   };
@@ -73,8 +73,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem("token", data.token);
       toast.success("Cadastro efetuado com sucesso!");
       return true;
-    } catch {
-      toast.error("Erro de conexão");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro de conexão");
       return false;
     }
   };
