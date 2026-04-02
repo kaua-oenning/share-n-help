@@ -6,62 +6,38 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Heart, Home, Menu, NotebookText, Plus, Search, X } from "lucide-react";
-import { useEffect, useReducer, useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo, useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import ThemeToggle from "./ThemeComponent";
 
-let navLinks = [
+const BASE_NAV = [
   { path: "/", label: "Início", icon: Home },
   { path: "/browse", label: "Explorar", icon: Search },
+] as const;
 
-  // { path: "/requests/new", label: "Solicitações", icon: Heart },
-];
-
-const Cadastros = {
-  path: "/registers",
-  label: "Meus Cadastros",
-  icon: NotebookText,
-};
-
-const Donate = { path: "/donate", label: "Doar", icon: Plus };
+const AUTH_NAV = [
+  { path: "/registers", label: "Meus Cadastros", icon: NotebookText },
+  { path: "/donate", label: "Doar", icon: Plus },
+] as const;
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export const Layout = ({ children }: LayoutProps) => {
-  const [, forceUpdate] = useReducer((x) => x + 1, 0);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, setLoginModalOpen, signOut } = useAuth();
+  const location = useLocation();
+
+  const navLinks = useMemo(
+    () => (user ? [...BASE_NAV, ...AUTH_NAV] : [...BASE_NAV]),
+    [user]
+  );
 
   useEffect(() => {
-    if (user) {
-      console.log(user);
-      if (!navLinks.find((nav) => nav.label === Cadastros.label)) {
-        navLinks.push(Cadastros);
-      }
-      if (!navLinks.find((nav) => nav.label === Donate.label)) {
-        navLinks.push(Donate);
-      }
-      forceUpdate();
-    } else {
-      if (navLinks.find((nav) => nav.label === Cadastros.label)) {
-        navLinks = [...navLinks.filter((nav) => nav.label !== Cadastros.label)];
-      }
-      if (navLinks.find((nav) => nav.label === Donate.label)) {
-        navLinks = [...navLinks.filter((nav) => nav.label !== Donate.label)];
-      }
-      forceUpdate();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -80,16 +56,12 @@ export const Layout = ({ children }: LayoutProps) => {
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <Heart
-              className="h-6 w-6 text-primary animate-fade-in"
-              fill="currentColor"
-            />
+            <Heart className="h-6 w-6 text-primary animate-fade-in" fill="currentColor" />
             <span className="font-semibold text-lg text-foreground">
               Share<span className="text-primary">&</span>Help
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => (
               <Link
@@ -111,56 +83,38 @@ export const Layout = ({ children }: LayoutProps) => {
               <Popover>
                 <PopoverTrigger>
                   <img
-                    src={user.photoURL || `https://ui-avatars.com/api/?name=${user.name}`}
+                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name ?? "")}`}
                     alt="Usuário"
                     className="h-9 w-9 rounded-full cursor-pointer border border-gray-300"
                   />
                 </PopoverTrigger>
                 <PopoverContent className="w-48 p-2 flex flex-col gap-2 items-center">
-                  <span className="text-sm text-center font-medium">
-                    {user.displayName}
-                  </span>
+                  <span className="text-sm text-center font-medium">{user.name}</span>
                   <div className="border w-full"></div>
                   <ThemeToggle />
-                  <Button
-                    variant="destructive"
-                    className="w-full"
-                    size="sm"
-                    onClick={signOut}
-                  >
+                  <Button variant="destructive" className="w-full" size="sm" onClick={signOut}>
                     Sair
                   </Button>
                 </PopoverContent>
               </Popover>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9"
-                onClick={() => setLoginModalOpen(true)}
-              >
+              <Button variant="outline" size="sm" className="h-9" onClick={() => setLoginModalOpen(true)}>
                 Entrar
               </Button>
             )}
           </nav>
 
-          {/* Mobile Menu Button */}
           <Button
             variant="ghost"
             size="icon"
             className="md:hidden"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
-            {isMobileMenuOpen ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Menu className="h-5 w-5" />
-            )}
+            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
       </header>
 
-      {/* Mobile Navigation */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-40 bg-background/95 pt-20 px-6 md:hidden animate-fade-in flex flex-col items-center">
           <nav className="flex flex-col gap-2 w-full max-w-xs">
@@ -184,35 +138,23 @@ export const Layout = ({ children }: LayoutProps) => {
                 <Popover>
                   <PopoverTrigger>
                     <img
-                      src={user.photoURL || `https://ui-avatars.com/api/?name=${user.name}`}
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name ?? "")}`}
                       alt="Usuário"
                       className="h-12 w-12 rounded-full cursor-pointer border border-gray-300"
                     />
                   </PopoverTrigger>
                   <PopoverContent className="w-48 p-2 flex flex-col gap-2 items-center">
-                    <span className="text-sm text-center font-medium">
-                      {user.displayName}
-                    </span>
+                    <span className="text-sm text-center font-medium">{user.name}</span>
                     <div className="border w-full"></div>
                     <ThemeToggle />
-                    <Button
-                      variant="destructive"
-                      className="w-full"
-                      size="sm"
-                      onClick={signOut}
-                    >
+                    <Button variant="destructive" className="w-full" size="sm" onClick={signOut}>
                       Sair
                     </Button>
                   </PopoverContent>
                 </Popover>
               </div>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 mt-4"
-                onClick={() => setLoginModalOpen(true)}
-              >
+              <Button variant="outline" size="sm" className="h-9 mt-4" onClick={() => setLoginModalOpen(true)}>
                 Entrar
               </Button>
             )}
