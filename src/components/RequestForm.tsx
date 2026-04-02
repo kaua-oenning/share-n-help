@@ -38,34 +38,37 @@ export const RequestForm = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.name.trim()) {
       toast.error("Por favor, informe seu nome");
       return;
     }
-
     if (!formData.phone.trim()) {
       toast.error("Por favor, informe um telefone para contato");
       return;
     }
-
     if (!formData.location.trim()) {
       toast.error("Por favor, informe sua localização");
       return;
     }
-
     if (formData.items.length === 0) {
       toast.error("Por favor, selecione pelo menos um tipo de item necessário");
       return;
     }
-    //ADICIONAR FIREBASE
-    setTimeout(() => {
+
+    setIsSubmitting(true);
+    try {
+      // TODO: substituir pelo endpoint real quando o backend implementar a rota de solicitações
+      await new Promise<void>((resolve) => setTimeout(resolve, 500));
       toast.success("Solicitação cadastrada com sucesso!");
-      setIsSubmitting(false);
       navigate("/browse");
-    }, 1500);
+    } catch {
+      toast.error("Erro ao cadastrar solicitação. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
