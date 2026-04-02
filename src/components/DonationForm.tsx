@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "./AuthContext";
+import { apiClient } from "@/lib/apiClient";
 
 export const DonationForm = () => {
   const navigate = useNavigate();
@@ -23,22 +24,13 @@ export const DonationForm = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const { user } = useAuth();
 
-  async function salvarBem(bem: any) {
-    try {
-      const res = await fetch("http://localhost:3000/api/bens/salvar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bem),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Erro");
-
-      toast.success("Bem Cadastrado com sucesso!");
-      return data.id;
-    } catch (error) {
-      toast.error("Erro ao salvar Bem");
-      throw error;
-    }
+  async function salvarBem(bem: typeof formData): Promise<string> {
+    const data = await apiClient.post<{ success: boolean; id: string; message?: string }>(
+      "/api/bens/salvar",
+      bem
+    );
+    if (!data.success) throw new Error(data.message ?? "Erro ao salvar");
+    return data.id;
   }
 
   const [formData, setFormData] = useState({
@@ -54,7 +46,6 @@ export const DonationForm = () => {
     contactEmail: "",
     status: "available",
     imageUrl: "",
-    userId: user?.id,
     interestsNumber: 0,
   });
 
@@ -82,37 +73,36 @@ export const DonationForm = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.title.trim()) {
       toast.error("Por favor, adicione um título para o item");
       return;
     }
-
     if (!formData.categoryId) {
       toast.error("Por favor, selecione uma categoria");
       return;
     }
-
     if (!formData.location.trim()) {
       toast.error("Por favor, informe o local de retirada");
       return;
     }
-
     if (!formData.contactEmail.trim() && !formData.contactPhone.trim()) {
       toast.error("Por favor, informe ou um telefone ou um email para contato");
       return;
     }
 
     setIsSubmitting(true);
-
-    salvarBem(formData);
-
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      await salvarBem(formData);
+      toast.success("Bem cadastrado com sucesso!");
       navigate("/browse");
-    }, 1500);
+    } catch {
+      toast.error("Erro ao cadastrar doação. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
