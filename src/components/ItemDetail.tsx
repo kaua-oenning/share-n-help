@@ -101,7 +101,7 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
   };
 
   const isAvailable = item.status === "available";
-  const hasInterests = item.interests?.length > 0;
+  const hasInterests = (item.interests?.length ?? 0) > 0;
   const isDonated = item.status === "donated";
   const isItemOwner = item.userId && item.userId === user?.id;
 
@@ -296,8 +296,8 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
               {item.interests?.length ?? 0}
             </span>
           </h3>
-          {item.interests?.length > 0 &&
-            item.interests.map((interest) => (
+          {(item.interests?.length ?? 0) > 0 &&
+            item.interests!.map((interest) => (
               <div
                 key={interest.email + interest.phone}
                 className="mt-6 p-4 bg-card border border-border/50 rounded-lg"

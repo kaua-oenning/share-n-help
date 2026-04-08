@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Upload, MapPin, Clock, Calendar, Check } from "lucide-react";
+import { Upload, MapPin, Clock, Calendar } from "lucide-react";
 import { categories } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,14 +15,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useAuth } from "./AuthContext";
 import { apiClient } from "@/lib/apiClient";
 
 export const DonationForm = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const { user } = useAuth();
 
   async function salvarBem(bem: typeof formData): Promise<string> {
     const data = await apiClient.post<{ success: boolean; id: string; message?: string }>(

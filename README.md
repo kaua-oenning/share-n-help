@@ -1,19 +1,64 @@
-# Bem-Vindo ao Projeto de Extensão Interdisciplinar
+# Share&Help - Frontend
 
-## Instalação
+Plataforma de doacao de itens que conecta doadores e solicitantes.
 
-Execute o comando abaixo para instalar as dependências do projeto:
+## Pre-requisitos
+
+- **Node.js** >= 18
+- **npm** >= 9
+- Backend rodando (ver `../share-n-help-backend`)
+
+## Instalacao
 
 ```bash
-Rodar:
 npm install
-
-Variáveis de ambiente:
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
-VITE_FIREBASE_MEASUREMENT_ID=
 ```
+
+## Variaveis de ambiente
+
+Crie um arquivo `.env` na raiz do frontend:
+
+```env
+VITE_API_URL=http://localhost:3000
+```
+
+> Se omitida, o frontend usa `http://localhost:3000` como padrao.
+
+## Executando
+
+```bash
+# Modo desenvolvimento
+npm run dev
+
+# Build de producao
+npm run build
+
+# Preview do build
+npm run preview
+```
+
+## Lint
+
+```bash
+npm run lint
+```
+
+## Estrutura principal
+
+```
+src/
+  components/    # Componentes React (Layout, DonationForm, ItemDetail, etc.)
+  components/ui/ # Componentes base (shadcn/ui)
+  lib/           # Utilitarios, apiClient, tipos de dados
+  pages/         # Paginas (Index, NotFound)
+  hooks/         # Hooks customizados
+  App.tsx        # Rotas e providers
+```
+
+## Stack
+
+- React 18 + TypeScript
+- Vite
+- Tailwind CSS + shadcn/ui
+- React Router DOM
+- Sonner (toasts)

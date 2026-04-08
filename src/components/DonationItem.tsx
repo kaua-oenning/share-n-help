@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { categories, DonationItem as DonationItemType } from "@/lib/data";
+import { DonationItem as DonationItemType } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 
 interface DonationItemProps {

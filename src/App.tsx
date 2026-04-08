@@ -1,7 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Index from "./pages/Index";
@@ -16,8 +15,6 @@ import { X } from "lucide-react";
 import { LoginModal } from "./components/LoginModal";
 import { categories, DonationItem as DonationItemType } from "@/lib/data";
 import { apiClient } from "@/lib/apiClient";
-
-const queryClient = new QueryClient();
 
 const RegistersPage = () => {
   const [activeItems, setActiveItems] = useState<DonationItemType[]>([]);
@@ -260,26 +257,24 @@ const RequestPage = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <LoginModal />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/browse" element={<BrowsePage />} />
-            <Route path="/donate" element={<DonatePage />} />
-            <Route path="/requests/new" element={<RequestPage />} />
-            <Route path="/items/:id" element={<ItemDetailPage />} />
-            <Route path="/registers" element={<RegistersPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <AuthProvider>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <LoginModal />
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/browse" element={<BrowsePage />} />
+          <Route path="/donate" element={<DonatePage />} />
+          <Route path="/requests/new" element={<RequestPage />} />
+          <Route path="/items/:id" element={<ItemDetailPage />} />
+          <Route path="/registers" element={<RegistersPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </AuthProvider>
 );
 
 export default App;
