@@ -2,18 +2,21 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DonationItem } from "@/components/DonationItem";
+import { DonationItemSkeleton } from "@/components/DonationItemSkeleton";
 import { DonationItem as DonationItemType } from "@/lib/data";
 
 interface FeaturedItemsSectionProps {
   items: DonationItemType[];
   isLoaded: boolean;
+  isLoading: boolean;
 }
 
 export const FeaturedItemsSection = ({
   items,
   isLoaded,
+  isLoading,
 }: FeaturedItemsSectionProps) => {
-  if (items.length === 0) return null;
+  if (items.length === 0 && !isLoading) return null;
   return (
     <section className="py-16">
       <div className="max-w-7xl mx-auto px-6">
@@ -34,17 +37,21 @@ export const FeaturedItemsSection = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {items.map((item) => (
-            <DonationItem
-              key={item.id}
-              item={item}
-              className={isLoaded ? "animate-slide-up" : "opacity-0"}
-              style={{
-                animationDelay: `${items.indexOf(item) * 100}ms`,
-                opacity: isLoaded ? 1 : 0,
-              }}
-            />
-          ))}
+          {isLoading
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <DonationItemSkeleton key={i} />
+              ))
+            : items.map((item) => (
+                <DonationItem
+                  key={item.id}
+                  item={item}
+                  className={isLoaded ? "animate-slide-up" : "opacity-0"}
+                  style={{
+                    animationDelay: `${items.indexOf(item) * 100}ms`,
+                    opacity: isLoaded ? 1 : 0,
+                  }}
+                />
+              ))}
         </div>
       </div>
     </section>

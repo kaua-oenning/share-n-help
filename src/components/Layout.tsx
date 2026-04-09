@@ -9,6 +9,7 @@ import { Heart, Home, Menu, NotebookText, Plus, Search, X } from "lucide-react";
 import { useMemo, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
+import { NotificationBell } from "./NotificationBell";
 import ThemeToggle from "./ThemeComponent";
 
 const BASE_NAV = [
@@ -80,23 +81,26 @@ export const Layout = ({ children }: LayoutProps) => {
             ))}
 
             {user ? (
-              <Popover>
-                <PopoverTrigger>
-                  <img
-                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name ?? "")}`}
-                    alt="Usuário"
-                    className="h-9 w-9 rounded-full cursor-pointer border border-gray-300"
-                  />
-                </PopoverTrigger>
-                <PopoverContent className="w-48 p-2 flex flex-col gap-2 items-center">
-                  <span className="text-sm text-center font-medium">{user.name}</span>
-                  <div className="border w-full"></div>
-                  <ThemeToggle />
-                  <Button variant="destructive" className="w-full" size="sm" onClick={signOut}>
-                    Sair
-                  </Button>
-                </PopoverContent>
-              </Popover>
+              <>
+                <NotificationBell />
+                <Popover>
+                  <PopoverTrigger>
+                    <img
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name ?? "")}`}
+                      alt="Usuário"
+                      className="h-9 w-9 rounded-full cursor-pointer border border-gray-300"
+                    />
+                  </PopoverTrigger>
+                  <PopoverContent className="w-48 p-2 flex flex-col gap-2 items-center">
+                    <span className="text-sm text-center font-medium">{user.name}</span>
+                    <div className="border w-full"></div>
+                    <ThemeToggle />
+                    <Button variant="destructive" className="w-full" size="sm" onClick={signOut}>
+                      Sair
+                    </Button>
+                  </PopoverContent>
+                </Popover>
+              </>
             ) : (
               <Button variant="outline" size="sm" className="h-9" onClick={() => setLoginModalOpen(true)}>
                 Entrar
@@ -134,7 +138,8 @@ export const Layout = ({ children }: LayoutProps) => {
               </Link>
             ))}
             {user ? (
-              <div className="flex flex-col items-center mt-4">
+              <div className="flex flex-col items-center mt-4 gap-3">
+                <NotificationBell />
                 <Popover>
                   <PopoverTrigger>
                     <img

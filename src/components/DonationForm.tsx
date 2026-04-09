@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Upload, MapPin, Clock, Calendar } from "lucide-react";
-import { categories } from "@/lib/data";
+import { categories, DonationItem as DonationItemType } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,34 +16,33 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { apiClient } from "@/lib/apiClient";
+import { formatPhone, isValidPhone, isValidEmail } from "@/lib/utils";
 
-export const DonationForm = () => {
+interface DonationFormProps {
+  editingId?: string;
+  initialData?: DonationItemType;
+}
+
+export const DonationForm = ({ editingId, initialData }: DonationFormProps) => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-
-  async function salvarBem(bem: typeof formData): Promise<string> {
-    const data = await apiClient.post<{ success: boolean; id: string; message?: string }>(
-      "/api/bens/salvar",
-      bem
-    );
-    if (!data.success) throw new Error(data.message ?? "Erro ao salvar");
-    return data.id;
-  }
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    initialData?.imageUrl || null
+  );
 
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    categoryId: "",
-    condition: "good",
-    location: "",
-    pickupDates: "",
-    pickupTimes: "",
-    contactName: "",
-    contactPhone: "",
-    contactEmail: "",
-    status: "available",
-    imageUrl: "",
+    title: initialData?.title ?? "",
+    description: initialData?.description ?? "",
+    categoryId: initialData?.categoryId ?? "",
+    condition: initialData?.condition ?? "good",
+    location: initialData?.location ?? "",
+    pickupDates: initialData?.pickupDates ?? "",
+    pickupTimes: initialData?.pickupTimes ?? "",
+    contactName: initialData?.contactName ?? "",
+    contactPhone: initialData?.contactPhone ?? "",
+    contactEmail: initialData?.contactEmail ?? "",
+    status: initialData?.status ?? "available",
+    imageUrl: initialData?.imageUrl ?? "",
     interestsNumber: 0,
   });
 
@@ -90,14 +89,35 @@ export const DonationForm = () => {
       toast.error("Por favor, informe ou um telefone ou um email para contato");
       return;
     }
+    if (formData.contactPhone.trim() && !isValidPhone(formData.contactPhone)) {
+      toast.error("Telefone inválido. Use o formato (00) 00000-0000");
+      return;
+    }
+    if (formData.contactEmail.trim() && !isValidEmail(formData.contactEmail)) {
+      toast.error("E-mail inválido.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      await salvarBem(formData);
-      toast.success("Bem cadastrado com sucesso!");
+      if (editingId) {
+        const data = await apiClient.put<{ success: boolean; message?: string }>(
+          `/api/bens/${editingId}`,
+          formData
+        );
+        if (!data.success) throw new Error(data.message ?? "Erro ao editar");
+        toast.success("Doação atualizada com sucesso!");
+      } else {
+        const data = await apiClient.post<{ success: boolean; id: string; message?: string }>(
+          "/api/bens/salvar",
+          formData
+        );
+        if (!data.success) throw new Error(data.message ?? "Erro ao salvar");
+        toast.success("Bem cadastrado com sucesso!");
+      }
       navigate("/browse");
     } catch {
-      toast.error("Erro ao cadastrar doação. Tente novamente.");
+      toast.error(editingId ? "Erro ao editar doação." : "Erro ao cadastrar doação. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -324,7 +344,9 @@ export const DonationForm = () => {
                   id="contactPhone"
                   name="contactPhone"
                   value={formData.contactPhone}
-                  onChange={handleChange}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, contactPhone: formatPhone(e.target.value) }))
+                  }
                   placeholder="(00) 00000-0000"
                 />
               </div>
@@ -348,7 +370,7 @@ export const DonationForm = () => {
               Cancelar
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Enviando..." : "Cadastrar doação"}
+              {isSubmitting ? "Enviando..." : editingId ? "Salvar alterações" : "Cadastrar doação"}
             </Button>
           </div>
         </div>

@@ -12,10 +12,12 @@ export const LoginModal = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
 
     let success = false;
     if (isRegistering) {
@@ -30,6 +32,13 @@ export const LoginModal = () => {
       setEmail("");
       setPassword("");
       setName("");
+      setError("");
+    } else {
+      setError(
+        isRegistering
+          ? "Erro ao criar conta. Verifique os dados e tente novamente."
+          : "E-mail ou senha incorretos."
+      );
     }
   };
 
@@ -74,6 +83,10 @@ export const LoginModal = () => {
             />
           </div>
           
+          {error && (
+            <p className="text-sm text-destructive text-center">{error}</p>
+          )}
+
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Aguarde..." : (isRegistering ? "Cadastrar" : "Entrar")}
           </Button>
@@ -82,7 +95,7 @@ export const LoginModal = () => {
             <button
               type="button"
               className="text-sm text-primary hover:underline"
-              onClick={() => setIsRegistering(!isRegistering)}
+              onClick={() => { setIsRegistering(!isRegistering); setError(""); }}
             >
               {isRegistering
                 ? "Já tem uma conta? Entre aqui."

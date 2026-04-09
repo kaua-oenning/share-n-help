@@ -20,13 +20,15 @@ import {
   Info,
   Mail,
   MapPin,
+  Package,
   Phone,
 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "./AuthContext";
 import { getConditionLabel } from "./DonationItem";
+import { categoryIconMap, formatPhone } from "@/lib/utils";
 
 interface ItemDetailProps {
   item: DonationItem;
@@ -35,12 +37,14 @@ interface ItemDetailProps {
 const statusColorMap = {
   available: "bg-green-100 text-green-800 border-green-200",
   reserved: "bg-amber-100 text-amber-800 border-amber-200",
+  pending_confirmation: "bg-orange-100 text-orange-800 border-orange-200",
   donated: "bg-blue-100 text-blue-800 border-blue-200",
 };
 
 const statusTextMap = {
   available: "Disponível",
   reserved: "Reservado",
+  pending_confirmation: "Aguardando Confirmação",
   donated: "Doado",
 };
 
@@ -64,7 +68,9 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [selectedInterestId, setSelectedInterestId] = useState<string | null>(null);
   const category = categories.find((c) => c.id === item.categoryId);
+  const IconComponent = categoryIconMap[item.categoryId] ?? Package;
   const navigate = useNavigate();
 
   const { user } = useAuth();
@@ -89,10 +95,24 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
   };
 
   const donateItem = async () => {
+    if (hasInterests && !selectedInterestId) {
+      toast.error("Selecione o interessado que receberá o item.");
+      return;
+    }
     try {
-      const data = await apiClient.patch<{ success: boolean; message?: string }>(`/api/bens/${item.id}/status`, { status: "donated" });
+      const data = await apiClient.patch<{ success: boolean; message?: string }>(
+        `/api/bens/${item.id}/status`,
+        {
+          status: hasInterests ? "pending_confirmation" : "donated",
+          interestId: selectedInterestId,
+        }
+      );
       if (!data.success) throw new Error(data.message);
-      toast.success("Item marcado como doado!");
+      toast.success(
+        hasInterests
+          ? "Aguardando confirmação do interessado!"
+          : "Item marcado como doado!"
+      );
       setIsDonatedDialogOpen(false);
       navigate("/browse");
     } catch {
@@ -100,7 +120,22 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
     }
   };
 
+  const confirmReceipt = async () => {
+    try {
+      const data = await apiClient.patch<{ success: boolean; message?: string }>(
+        `/api/bens/${item.id}/confirm-receipt`,
+        {}
+      );
+      if (!data.success) throw new Error(data.message);
+      toast.success("Recebimento confirmado!");
+      navigate("/browse");
+    } catch {
+      toast.error("Erro ao confirmar recebimento.");
+    }
+  };
+
   const isAvailable = item.status === "available";
+  const isPendingConfirmation = item.status === "pending_confirmation";
   const hasInterests = (item.interests?.length ?? 0) > 0;
   const isDonated = item.status === "donated";
   const isItemOwner = item.userId && item.userId === user?.id;
@@ -125,13 +160,11 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
                 />
               </div>
             ) : (
-              <div
-                className={cn(
-                  "relative aspect-square",
-                  "font-bold text-center content-center"
-                )}
-              >
-                Sem Imagem
+              <div className="relative aspect-square bg-muted flex flex-col items-center justify-center gap-2">
+                <IconComponent className="h-16 w-16 text-muted-foreground/50" />
+                <span className="text-sm text-muted-foreground/50">
+                  {category?.name ?? "Sem imagem"}
+                </span>
               </div>
             )}
 
@@ -200,6 +233,14 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
             </div>
 
             <h1 className="text-2xl font-semibold">{item.title}</h1>
+            {item.user && (
+              <Link
+                to={`/profile/${item.userId}`}
+                className="text-sm text-primary hover:underline mt-1 inline-block"
+              >
+                por {item.user.name}
+              </Link>
+            )}
 
             <div className="mt-4 space-y-2 text-muted-foreground">
               <div className="flex items-start gap-2">
@@ -256,6 +297,20 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
             </div>
           )}
 
+          {isPendingConfirmation && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <div className="flex items-start gap-2">
+                <Clock className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-orange-800">Aguardando confirmação</h4>
+                  <p className="text-sm text-orange-700">
+                    Aguardando o interessado confirmar o recebimento do item.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
             {isAvailable && (!item.userId || item.userId !== user?.id) && (
               <Button
@@ -266,13 +321,29 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
               </Button>
             )}
 
-            {isItemOwner && !isDonated && (
+            {isItemOwner && !isDonated && !isPendingConfirmation && (
               <Button
                 variant="secondary"
                 className="flex-1"
                 onClick={() => setIsDonatedDialogOpen(true)}
               >
                 Marcar como doado
+              </Button>
+            )}
+
+            {isItemOwner && !isDonated && !isPendingConfirmation && (
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => navigate(`/donate/${item.id}`)}
+              >
+                Editar
+              </Button>
+            )}
+
+            {isPendingConfirmation && !isItemOwner && (
+              <Button className="flex-1" onClick={confirmReceipt}>
+                Confirmar recebimento
               </Button>
             )}
 
@@ -357,7 +428,7 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
               <Input
                 id="phone"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(formatPhone(e.target.value))}
                 placeholder="(00) 00000-0000"
               />
             </div>
@@ -386,10 +457,40 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
           <DialogHeader>
             <DialogTitle>Marcar como doado</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja marcar este item como doado? Ele não
-              aparecerá mais na lista de itens disponíveis.
+              {hasInterests
+                ? "Selecione o interessado que receberá o item."
+                : "Tem certeza que deseja marcar este item como doado?"}
             </DialogDescription>
           </DialogHeader>
+
+          {hasInterests && (
+            <div className="space-y-2 py-4">
+              {item.interests!.map((interest) => (
+                <label
+                  key={interest.id ?? interest.email}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                    selectedInterestId === interest.id
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/30"
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="selectedInterest"
+                    value={interest.id ?? ""}
+                    checked={selectedInterestId === interest.id}
+                    onChange={() => setSelectedInterestId(interest.id ?? null)}
+                    className="accent-primary"
+                  />
+                  <div>
+                    <div className="font-medium">{interest.name}</div>
+                    <div className="text-sm text-muted-foreground">{interest.email}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
 
           <DialogFooter>
             <Button

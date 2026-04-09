@@ -7,21 +7,26 @@ import { HowItWorksSection } from "@/components/sections/HowItWorksSection";
 import { categories, DonationItem } from "@/lib/data";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { apiClient } from "@/lib/apiClient";
 
 const Index = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [featuredItems, setFeaturedItems] = useState<DonationItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
     setIsLoaded(true);
     const fetchFeaturedItems = async () => {
       try {
-        const res = await fetch("http://localhost:3000/api/bens?status=available");
-        if (!res.ok) throw new Error("Erro");
-        const items = await res.json();
-
-        setFeaturedItems(items.slice(0, 3));
+        setIsLoading(true);
+        const data = await apiClient.get<{ items: DonationItem[] }>(
+          "/api/bens?status=available&limit=3"
+        );
+        setFeaturedItems(data.items);
       } catch (_err) {
         toast("Erro ao carregar os itens.");
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -32,7 +37,7 @@ const Index = () => {
     <Layout>
       <HeroSection />
       <CategoriesSection categories={categories} isLoaded={isLoaded} />
-      <FeaturedItemsSection items={featuredItems} isLoaded={isLoaded} />
+      <FeaturedItemsSection items={featuredItems} isLoaded={isLoaded} isLoading={isLoading} />
       <HowItWorksSection isLoaded={isLoaded} />
       <CTASection />
     </Layout>

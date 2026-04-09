@@ -117,7 +117,7 @@ describe("Marcacao como doado", () => {
     const ownerItem: DonationItem = {
       ...mockItem,
       userId: "owner-1",
-      interests: [{ name: "Joao", phone: "(51) 91111-1111", email: "joao@test.com" }],
+      interests: [{ id: "interest-1", name: "Joao", phone: "(51) 91111-1111", email: "joao@test.com" }],
     };
 
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
@@ -140,6 +140,8 @@ describe("Marcacao como doado", () => {
     });
 
     await user.click(screen.getByText("Marcar como doado"));
+    // Seleciona o interessado antes de confirmar
+    await user.click(screen.getByRole("radio"));
     await user.click(screen.getByRole("button", { name: "Confirmar" }));
 
     await waitFor(() => {

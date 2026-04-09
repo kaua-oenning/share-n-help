@@ -5,7 +5,7 @@ export type Category = {
   description: string;
 };
 
-export type ItemStatus = "available" | "reserved" | "donated";
+export type ItemStatus = "available" | "reserved" | "pending_confirmation" | "donated";
 
 export type DonationItem = {
   id: string;
@@ -25,9 +25,14 @@ export type DonationItem = {
   updatedAt: string;
   userId: string;
   interests?: DonationItemInterest[];
+  donatedToInterestId?: string;
+  donorConfirmedAt?: string;
+  recipientConfirmedAt?: string;
+  user?: { id: string; name: string };
 };
 
 export type DonationItemInterest = {
+  id?: string;
   name: string;
   phone: string;
   email: string
@@ -43,6 +48,16 @@ export type NeedRequest = {
   reason: string;
   createdAt: string;
   status: "active" | "fulfilled" | "expired";
+};
+
+export type Notification = {
+  id: string;
+  userId: string;
+  type: "new_interest" | "donation_confirmed" | "recipient_confirm_request";
+  message: string;
+  relatedItemId?: string;
+  read: boolean;
+  createdAt: string;
 };
 
 export const categories: Category[] = [

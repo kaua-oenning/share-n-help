@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { apiClient } from "@/lib/apiClient";
+import { formatPhone, isValidPhone } from "@/lib/utils";
 
 export const RequestForm = () => {
   const navigate = useNavigate();
@@ -49,6 +51,10 @@ export const RequestForm = () => {
       toast.error("Por favor, informe um telefone para contato");
       return;
     }
+    if (!isValidPhone(formData.phone)) {
+      toast.error("Telefone inválido. Use o formato (00) 00000-0000");
+      return;
+    }
     if (!formData.location.trim()) {
       toast.error("Por favor, informe sua localização");
       return;
@@ -60,8 +66,11 @@ export const RequestForm = () => {
 
     setIsSubmitting(true);
     try {
-      // TODO: substituir pelo endpoint real quando o backend implementar a rota de solicitações
-      await new Promise<void>((resolve) => setTimeout(resolve, 500));
+      const data = await apiClient.post<{ success: boolean; message?: string }>(
+        "/api/requests",
+        formData
+      );
+      if (!data.success) throw new Error(data.message ?? "Erro ao cadastrar");
       toast.success("Solicitação cadastrada com sucesso!");
       navigate("/browse");
     } catch {
@@ -104,7 +113,9 @@ export const RequestForm = () => {
                 id="phone"
                 name="phone"
                 value={formData.phone}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, phone: formatPhone(e.target.value) }))
+                }
                 placeholder="(00) 00000-0000"
                 required
               />

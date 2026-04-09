@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { DonationItem as DonationItemType } from "@/lib/data";
+import { cn, categoryIconMap } from "@/lib/utils";
+import { DonationItem as DonationItemType, categories } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
+import { Package } from "lucide-react";
 
 interface DonationItemProps {
   item: DonationItemType;
@@ -17,6 +18,8 @@ export function getConditionLabel(condition: string) {
 
 export const DonationItem = ({ item, className, style }: DonationItemProps) => {
   const isDonated = item.status === "donated";
+  const IconComponent = categoryIconMap[item.categoryId] ?? Package;
+  const category = categories.find((c) => c.id === item.categoryId);
 
   return (
     <div
@@ -37,13 +40,11 @@ export const DonationItem = ({ item, className, style }: DonationItemProps) => {
               className="w-full h-full object-cover rounded-t-lg"
             />
           ) : (
-            <div
-              className={cn(
-                "relative aspect-square",
-                "font-bold text-center content-center"
-              )}
-            >
-              Sem Imagem
+            <div className="relative aspect-square bg-muted flex flex-col items-center justify-center gap-2">
+              <IconComponent className="h-12 w-12 text-muted-foreground/50" />
+              <span className="text-sm text-muted-foreground/50">
+                {category?.name ?? "Sem imagem"}
+              </span>
             </div>
           )}{" "}
         </div>
