@@ -53,7 +53,7 @@ export type NeedRequest = {
 export type Notification = {
   id: string;
   userId: string;
-  type: "new_interest" | "donation_confirmed" | "recipient_confirm_request";
+  type: "new_interest" | "donation_confirmed" | "recipient_confirm_request" | "selection_cancelled" | "auto_confirmed";
   message: string;
   relatedItemId?: string;
   read: boolean;

@@ -8,9 +8,10 @@ import { Category } from "@/lib/data";
 interface CategoriesSectionProps {
   categories: Category[];
   isLoaded: boolean;
+  counts?: Record<string, number>;
 }
 
-export const CategoriesSection = ({ categories, isLoaded }: CategoriesSectionProps) => {
+export const CategoriesSection = ({ categories, isLoaded, counts }: CategoriesSectionProps) => {
   return (
     <section className="py-16 bg-secondary/30">
       <div className="max-w-7xl mx-auto px-6">
@@ -32,11 +33,12 @@ export const CategoriesSection = ({ categories, isLoaded }: CategoriesSectionPro
         
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {categories.slice(0, 8).map((category) => (
-            <CategoryCard 
-              key={category.id} 
-              category={category} 
+            <CategoryCard
+              key={category.id}
+              category={category}
+              count={counts?.[category.id]}
               className={isLoaded ? "animate-slide-up" : "opacity-0"}
-              style={{ 
+              style={{
                 animationDelay: `${categories.indexOf(category) * 100}ms`,
                 opacity: isLoaded ? 1 : 0
               }}

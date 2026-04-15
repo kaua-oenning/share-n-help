@@ -52,6 +52,13 @@ describe("Registro de interesse", () => {
   it("registra interesse com sucesso e navega", async () => {
     const user = userEvent.setup();
 
+    // Simula usuario logado (necessario para demonstrar interesse)
+    localStorage.setItem("token", "fake-token");
+    localStorage.setItem(
+      "user",
+      JSON.stringify({ id: "user-1", name: "Joao", email: "joao@test.com" })
+    );
+
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
       ok: true,
       status: 200,
@@ -60,13 +67,17 @@ describe("Registro de interesse", () => {
 
     renderItem();
 
+    // Espera o AuthProvider hidratar do localStorage
+    await waitFor(() => {
+      expect(screen.getByText("Tenho interesse")).toBeInTheDocument();
+    });
+
     await user.click(screen.getByText("Tenho interesse"));
 
-    await user.type(screen.getByLabelText("Seu nome"), "Joao");
-    await user.type(screen.getByLabelText("E-mail para contato"), "joao@test.com");
-    await user.type(screen.getByLabelText("Seu telefone"), "(51) 91111-1111");
+    // Agora so precisa do telefone (nome e email vem da conta)
+    await user.type(screen.getByLabelText(/Seu telefone/), "(51) 91111-1111");
 
-    await user.click(screen.getByRole("button", { name: "Reservar item" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar interesse" }));
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith("/browse");
@@ -81,6 +92,13 @@ describe("Registro de interesse", () => {
   it("exibe erro quando API falha ao registrar interesse", async () => {
     const user = userEvent.setup();
 
+    // Simula usuario logado
+    localStorage.setItem("token", "fake-token");
+    localStorage.setItem(
+      "user",
+      JSON.stringify({ id: "user-1", name: "Joao", email: "joao@test.com" })
+    );
+
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
       ok: true,
       status: 200,
@@ -89,13 +107,15 @@ describe("Registro de interesse", () => {
 
     renderItem();
 
+    await waitFor(() => {
+      expect(screen.getByText("Tenho interesse")).toBeInTheDocument();
+    });
+
     await user.click(screen.getByText("Tenho interesse"));
 
-    await user.type(screen.getByLabelText("Seu nome"), "Joao");
-    await user.type(screen.getByLabelText("E-mail para contato"), "joao@test.com");
-    await user.type(screen.getByLabelText("Seu telefone"), "(51) 91111-1111");
+    await user.type(screen.getByLabelText(/Seu telefone/), "(51) 91111-1111");
 
-    await user.click(screen.getByRole("button", { name: "Reservar item" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar interesse" }));
 
     await waitFor(() => {
       expect(mockNavigate).not.toHaveBeenCalled();

@@ -13,6 +13,7 @@ const Index = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [featuredItems, setFeaturedItems] = useState<DonationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     setIsLoaded(true);
@@ -30,13 +31,23 @@ const Index = () => {
       }
     };
 
+    const fetchCounts = async () => {
+      try {
+        const data = await apiClient.get<Record<string, number>>("/api/bens/count-by-category");
+        setCategoryCounts(data);
+      } catch {
+        // silent fail
+      }
+    };
+
     fetchFeaturedItems();
+    fetchCounts();
   }, []);
 
   return (
     <Layout>
       <HeroSection />
-      <CategoriesSection categories={categories} isLoaded={isLoaded} />
+      <CategoriesSection categories={categories} isLoaded={isLoaded} counts={categoryCounts} />
       <FeaturedItemsSection items={featuredItems} isLoaded={isLoaded} isLoading={isLoading} />
       <HowItWorksSection isLoaded={isLoaded} />
       <CTASection />

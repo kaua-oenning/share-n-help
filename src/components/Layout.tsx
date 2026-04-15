@@ -5,7 +5,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { Heart, Home, Menu, NotebookText, Plus, Search, X } from "lucide-react";
+import { Heart, Home, Menu, NotebookText, Plus, Search, X, HandHeart, ClipboardList } from "lucide-react";
 import { useMemo, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
@@ -15,10 +15,12 @@ import ThemeToggle from "./ThemeComponent";
 const BASE_NAV = [
   { path: "/", label: "Início", icon: Home },
   { path: "/browse", label: "Explorar", icon: Search },
+  { path: "/requests", label: "Solicitações", icon: HandHeart },
 ] as const;
 
 const AUTH_NAV = [
   { path: "/registers", label: "Meus Cadastros", icon: NotebookText },
+  { path: "/my-requests", label: "Minhas Solicitações", icon: ClipboardList },
   { path: "/donate", label: "Doar", icon: Plus },
 ] as const;
 

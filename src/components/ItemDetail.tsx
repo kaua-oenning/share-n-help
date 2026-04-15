@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DonationItem, DonationItemInterest, categories } from "@/lib/data";
+import { DonationItem, categories } from "@/lib/data";
 import { format, isValid } from "date-fns";
 import {
   Calendar,
@@ -56,7 +56,7 @@ const formatDate = (dateString: string) => {
   return format(date, "dd/MM/yyyy");
 };
 
-async function addInterestToItem(itemId: string, interest: DonationItemInterest): Promise<void> {
+async function addInterestToItem(itemId: string, interest: { name: string; phone: string; email: string }): Promise<void> {
   const data = await apiClient.post<{ success: boolean; message?: string }>(`/api/bens/${itemId}/interest`, interest);
   if (!data.success) throw new Error(data.message ?? "Erro ao registrar interesse");
 }
@@ -65,32 +65,32 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isReserveDialogOpen, setIsReserveDialogOpen] = useState(false);
   const [isDonatedDialogOpen, setIsDonatedDialogOpen] = useState(false);
-  const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
   const [selectedInterestId, setSelectedInterestId] = useState<string | null>(null);
   const category = categories.find((c) => c.id === item.categoryId);
   const IconComponent = categoryIconMap[item.categoryId] ?? Package;
   const navigate = useNavigate();
 
-  const { user } = useAuth();
+  const { user, setLoginModalOpen } = useAuth();
 
-  const reserveItem = async () => {
-    const alreadyExists = item.interests?.some(
-      (interest) => interest.email === user?.email || interest.phone === phone || interest.email === email
-    );
-    if (alreadyExists) {
-      toast.error("Já foi demonstrado interesse neste item com este e-mail ou telefone.");
+  const handleInterestClick = () => {
+    if (!user) {
+      toast.info("Faça login para demonstrar interesse.");
+      setLoginModalOpen(true);
       return;
     }
-    const newInterest: DonationItemInterest = { name, phone, email };
+    setIsReserveDialogOpen(true);
+  };
+
+  const reserveItem = async () => {
     try {
-      await addInterestToItem(item.id, newInterest);
+      await addInterestToItem(item.id, { name: user.name, phone, email: user.email });
       toast.success("Interesse registrado com sucesso!");
       setIsReserveDialogOpen(false);
       navigate("/browse");
-    } catch {
-      toast.error("Erro ao registrar interesse. Tente novamente.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao registrar interesse.";
+      toast.error(msg);
     }
   };
 
@@ -131,6 +131,23 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
       navigate("/browse");
     } catch {
       toast.error("Erro ao confirmar recebimento.");
+    }
+  };
+
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+
+  const cancelSelection = async () => {
+    try {
+      const data = await apiClient.patch<{ success: boolean; message?: string }>(
+        `/api/bens/${item.id}/cancel-selection`,
+        {}
+      );
+      if (!data.success) throw new Error(data.message);
+      toast.success("Seleção cancelada. O item está disponível novamente.");
+      setIsCancelDialogOpen(false);
+      window.location.reload();
+    } catch {
+      toast.error("Erro ao cancelar seleção.");
     }
   };
 
@@ -315,7 +332,7 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
             {isAvailable && (!item.userId || item.userId !== user?.id) && (
               <Button
                 className="flex-1"
-                onClick={() => setIsReserveDialogOpen(true)}
+                onClick={handleInterestClick}
               >
                 Tenho interesse
               </Button>
@@ -338,6 +355,16 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
                 onClick={() => navigate(`/donate/${item.id}`)}
               >
                 Editar
+              </Button>
+            )}
+
+            {isPendingConfirmation && isItemOwner && (
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={() => setIsCancelDialogOpen(true)}
+              >
+                Cancelar seleção
               </Button>
             )}
 
@@ -393,38 +420,16 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
       <Dialog open={isReserveDialogOpen} onOpenChange={setIsReserveDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reservar este item</DialogTitle>
+            <DialogTitle>Demonstrar interesse</DialogTitle>
             <DialogDescription>
-              Preencha seus dados para reservar este item. O doador entrará em
-              contato com você.
+              Informe seu telefone para que o doador possa entrar em contato.
+              Seu nome ({user?.name}) e e-mail ({user?.email}) serão enviados automaticamente.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Seu nome</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Digite seu nome completo"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="contactEmail">E-mail para contato</Label>
-              <Input
-                id="contactEmail"
-                name="contactEmail"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="email@exemplo.com"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Seu telefone</Label>
+              <Label htmlFor="phone">Seu telefone <span className="text-destructive">*</span></Label>
               <Input
                 id="phone"
                 value={phone}
@@ -443,9 +448,29 @@ export const ItemDetail = ({ item }: ItemDetailProps) => {
             </Button>
             <Button
               onClick={reserveItem}
-              disabled={!name.trim() || !phone.trim()}
+              disabled={!phone.trim()}
             >
-              Reservar item
+              Confirmar interesse
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Selection Dialog */}
+      <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancelar seleção</DialogTitle>
+            <DialogDescription>
+              Tem certeza? O item voltará a ficar disponível e o interessado será notificado do cancelamento.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsCancelDialogOpen(false)}>
+              Voltar
+            </Button>
+            <Button variant="destructive" onClick={cancelSelection}>
+              Confirmar cancelamento
             </Button>
           </DialogFooter>
         </DialogContent>

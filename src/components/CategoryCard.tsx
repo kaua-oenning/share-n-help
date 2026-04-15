@@ -26,12 +26,14 @@ const iconMap: Record<string, React.ReactNode> = {
 
 interface CategoryCardProps {
   category: Category;
+  count?: number;
   className?: string;
   style?: React.CSSProperties;
 }
 
 export const CategoryCard = ({
   category,
+  count,
   className,
   style,
 }: CategoryCardProps) => {
@@ -67,6 +69,11 @@ export const CategoryCard = ({
           <p className="text-sm text-muted-foreground">
             {category.description}
           </p>
+          {count !== undefined && (
+            <p className={cn("text-xs font-medium mt-1", count > 0 ? "text-primary" : "text-muted-foreground/60")}>
+              {count > 0 ? `${count} ${count === 1 ? "item" : "itens"}` : "Nenhum item"}
+            </p>
+          )}
         </div>
       </div>
 

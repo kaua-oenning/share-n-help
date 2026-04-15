@@ -12,9 +12,19 @@ import { ItemDetail } from "./components/ItemDetail";
 import { AuthProvider, useAuth } from "./components/AuthContext";
 import { DonationItem } from "./components/DonationItem";
 import { DonationItemSkeleton } from "./components/DonationItemSkeleton";
-import { X } from "lucide-react";
+import { X, MapPin, Search } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { LoginModal } from "./components/LoginModal";
 import { ProfilePage } from "./components/ProfilePage";
+import { RequestsPage } from "./components/RequestsPage";
+import { MyRequestsPage } from "./components/MyRequestsPage";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { categories, DonationItem as DonationItemType } from "@/lib/data";
 import { apiClient } from "@/lib/apiClient";
@@ -105,6 +115,11 @@ const BrowsePage = () => {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const observerRef = useRef<HTMLDivElement | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [locationFilter, setLocationFilter] = useState("");
+  const [debouncedLocation, setDebouncedLocation] = useState("");
+  const [sortBy, setSortBy] = useState<"recent" | "oldest" | "interests">("recent");
 
   const fetchPage = async (pageNum: number, reset = false) => {
     try {
@@ -149,9 +164,53 @@ const BrowsePage = () => {
     return () => observer.disconnect();
   }, [hasMore, isLoadingMore, page]);
 
-  const filteredItems = selectedCategory
-    ? activeItems.filter((item) => item.categoryId === selectedCategory)
-    : activeItems;
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedLocation(locationFilter), 300);
+    return () => clearTimeout(timer);
+  }, [locationFilter]);
+
+  const filteredItems = (() => {
+    let items = activeItems;
+
+    if (selectedCategory) {
+      items = items.filter((item) => item.categoryId === selectedCategory);
+    }
+    if (debouncedSearch) {
+      const term = debouncedSearch.toLowerCase();
+      items = items.filter(
+        (item) =>
+          item.title.toLowerCase().includes(term) ||
+          item.description.toLowerCase().includes(term)
+      );
+    }
+    if (debouncedLocation) {
+      const loc = debouncedLocation.toLowerCase();
+      items = items.filter((item) => item.location.toLowerCase().includes(loc));
+    }
+
+    if (sortBy === "oldest") {
+      items = [...items].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    } else if (sortBy === "interests") {
+      items = [...items].sort((a, b) => (b.interests?.length ?? 0) - (a.interests?.length ?? 0));
+    }
+
+    return items;
+  })();
+
+  const hasActiveFilters = !!selectedCategory || !!debouncedSearch || !!debouncedLocation;
+
+  const clearAllFilters = () => {
+    setSelectedCategory(null);
+    setSearchTerm("");
+    setDebouncedSearch("");
+    setLocationFilter("");
+    setDebouncedLocation("");
+  };
 
   return (
     <Layout>
@@ -224,10 +283,43 @@ const BrowsePage = () => {
                 ? `${categories.find((c) => c.id === selectedCategory)?.name ?? "Itens"} disponíveis`
                 : "Todos os itens disponíveis"}
             </h1>
-            <p className="text-muted-foreground mb-8">
+            <p className="text-muted-foreground mb-6">
               {filteredItems.length}{" "}
               {filteredItems.length === 1 ? "item encontrado" : "itens encontrados"}
             </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar por título ou descrição..."
+                  className="w-full pl-9 pr-3 py-2 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div className="relative flex-1 sm:max-w-[240px]">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={locationFilter}
+                  onChange={(e) => setLocationFilter(e.target.value)}
+                  placeholder="Filtrar por cidade..."
+                  className="w-full pl-9 pr-3 py-2 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as "recent" | "oldest" | "interests")}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Ordenar por" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recent">Mais recente</SelectItem>
+                  <SelectItem value="oldest">Mais antigo</SelectItem>
+                  <SelectItem value="interests">Mais interessados</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -252,9 +344,21 @@ const BrowsePage = () => {
               </>
             ) : (
               <div className="text-center py-12 border border-dashed rounded-lg">
-                <p className="text-muted-foreground">
-                  Nenhum item disponível nesta categoria no momento.
+                <Search className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
+                <p className="text-muted-foreground mb-1">
+                  {debouncedSearch && `Nenhum item encontrado para "${debouncedSearch}".`}
+                  {!debouncedSearch && selectedCategory && `Nenhum item disponível em ${categories.find((c) => c.id === selectedCategory)?.name ?? "esta categoria"}.`}
+                  {!debouncedSearch && !selectedCategory && debouncedLocation && `Nenhum item encontrado em "${debouncedLocation}".`}
+                  {!debouncedSearch && !selectedCategory && !debouncedLocation && "Nenhum item disponível no momento."}
                 </p>
+                {hasActiveFilters && (
+                  <>
+                    <p className="text-sm text-muted-foreground mb-4">Tente outro termo ou explore todas as categorias.</p>
+                    <Button variant="outline" size="sm" onClick={clearAllFilters}>
+                      Limpar filtros
+                    </Button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -429,6 +533,8 @@ const App = () => (
           <Route path="/browse" element={<BrowsePage />} />
           <Route path="/donate" element={<DonatePage />} />
           <Route path="/donate/:id" element={<EditDonatePage />} />
+          <Route path="/requests" element={<RequestsPage />} />
+          <Route path="/my-requests" element={<MyRequestsPage />} />
           <Route path="/requests/new" element={<RequestPage />} />
           <Route path="/items/:id" element={<ItemDetailPage />} />
           <Route path="/registers" element={<RegistersPage />} />

@@ -21,7 +21,7 @@ async function request<T>(
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
-  if (res.status === 401) {
+  if (res.status === 401 && !path.startsWith("/api/auth/")) {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     window.location.href = "/";
@@ -44,4 +44,6 @@ export const apiClient = {
     request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
   put: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PUT", body: JSON.stringify(body) }),
+  delete: <T>(path: string) =>
+    request<T>(path, { method: "DELETE" }),
 };
